@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  database:
+    image: postgres:14.2-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=brq
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - data_storage:/var/lib/postgresql/data
+    networks:
+      - application
+
+  redis:
+    image: bitnami/redis:7.0
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=brq123
+    volumes:
+      - redis_persistence:/bitnami/redis/data
+    networks:
+      - application
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@database:5432/brq?schema=public
+    volumes:
+      - .:/app
+    links:
+      - redis
+      - database
+    depends_on:
+      - redis
+      - database
+    networks:
+      - application
+
+networks:
+  application:
+
+volumes:
+  data_storage:
+  redis_persistence:
